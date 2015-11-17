@@ -7,7 +7,7 @@ import android.util.Log;
  */
 public class CircularBuffer {
     private final String TAG = "CircularBuffer";
-    private final int CONST_K = 5;
+    private int CONST_K = 1;
     private int maxSize;
     private float mDuration;
 
@@ -76,6 +76,11 @@ public class CircularBuffer {
             double impulseResponse = t * Math.exp(-t * Math.sqrt(CONST_K));
             Log.d(TAG, idx+" "+ mBuffer[idx]);
         }
+    }
+
+    public void setK(int k){
+        CONST_K = k;
+        return;
     }
 }
 

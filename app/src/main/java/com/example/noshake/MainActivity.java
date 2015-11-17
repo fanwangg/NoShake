@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import butterknife.Bind;
@@ -21,8 +22,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final int SENEOR_TYPE = Sensor.TYPE_LINEAR_ACCELERATION;
     private final int ACCELEROMOTER_FPS = SensorManager.SENSOR_DELAY_FASTEST;
     private final int BUFFER_SECOND = 4;
-    private final int BUFFER_DATA_SIZE = BUFFER_SECOND * 60;
-    private final int OFFSET_SCALE = 10;
+    private final int FPS = 60;
+    private final int BUFFER_DATA_SIZE = BUFFER_SECOND * FPS;
+
+
+    private int OFFSET_SCALE = 30;
 
     private SensorManager senSensorManager;
     private Sensor senAccelerometer;
@@ -31,10 +35,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private int mScreenHeight, mScreenWidth;
 
 
+    @Bind(R.id.seekBarK) SeekBar mSeekBarK;
+    @Bind(R.id.seekBarAlpha) SeekBar mSeekBarAlpha;
+    @Bind(R.id.textKVal) TextView mTextK;
+    @Bind(R.id.textAVal) TextView mTextA;
     @Bind(R.id.accX) TextView mTextAccX;
     @Bind(R.id.accY) TextView mTextAccY;
     @Bind(R.id.accZ) TextView mTextAccZ;
-    @Bind(R.id.content) View mTargetView;
+    @Bind(R.id.content) TextView mTargetView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +62,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         mBufferX = new CircularBuffer(BUFFER_DATA_SIZE, BUFFER_SECOND);
         mBufferY = new CircularBuffer(BUFFER_DATA_SIZE, BUFFER_SECOND);
+
+        mSeekBarK.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int val = 1 + progress;
+                mBufferX.setK(val);
+                mBufferY.setK(val);
+                mTextK.setText(String.valueOf(val));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        mSeekBarAlpha.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int val = 1 + progress;
+                OFFSET_SCALE = val;
+                mTextA.setText(String.valueOf(val));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     protected void onPause() {
@@ -82,8 +129,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             mBufferY.insert(y);
 
 
-            float dx = -mBufferX.convolveWithH() * OFFSET_SCALE;
-            float dy = -mBufferY.convolveWithH() * OFFSET_SCALE;
+            float dx = mBufferX.convolveWithH() * OFFSET_SCALE;
+            float dy = mBufferY.convolveWithH() * OFFSET_SCALE;
             updateStablilizedResult(dx, dy);
             Log.d("MainActivity", " " + dx + " " + dy);
         }
