@@ -1,5 +1,6 @@
 package com.example.noshake;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Point;
 import android.hardware.Sensor;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private int OFFSET_SCALE = 30;
 
+    private Context mContext;
     private SensorManager senSensorManager;
     private Sensor senAccelerometer;
     private CircularBuffer mBufferX;
@@ -50,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        mContext = this;
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -118,21 +121,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Sensor mySensor = sensorEvent.sensor;
 
         if (mySensor.getType() == SENEOR_TYPE) {
-            float x = sensorEvent.values[0];
-            float y = sensorEvent.values[1];
+            final float x = sensorEvent.values[0];
+            final float y = sensorEvent.values[1];
             float z = sensorEvent.values[2];
-            mTextAccX.setText(""+x);
+            mTextAccX.setText("" + x);
             mTextAccY.setText("" + y);
             mTextAccZ.setText("" + z);
 
-            mBufferX.insert(x);
-            mBufferY.insert(y);
 
+            new Thread(new Runnable() {
+                public void run() {
+                    mBufferX.insert(x);
+                    mBufferY.insert(y);
+                    final float dx = -mBufferX.convolveWithH() * OFFSET_SCALE;
+                    final float dy = -mBufferY.convolveWithH() * OFFSET_SCALE;
 
-            float dx = mBufferX.convolveWithH() * OFFSET_SCALE;
-            float dy = mBufferY.convolveWithH() * OFFSET_SCALE;
-            updateStablilizedResult(dx, dy);
-            Log.d("MainActivity", " " + dx + " " + dy);
+                    ((Activity) mContext).runOnUiThread(new Runnable() {
+                        public void run() {
+                            updateStablilizedResult(dx, dy);
+                        }
+                    });
+                }
+            }).start();
+
         }
 
 
@@ -145,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
     public void updateStablilizedResult(float x, float y){
         mTargetView.setX(x+ mScreenWidth/2);
-        mTargetView.setY(y+ mScreenHeight/2);
-
+        mTargetView.setY(y + mScreenHeight / 2);
+        Log.d("MainActivity", " " + x + " " + y);
     }
 }
